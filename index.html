@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Genshin Impact — Таблица шансов | Heatmap</title>
+
+    <style>
+        :root{
+            --bg: #0f1720;
+            --card: #0b1220;
+            --muted: #98a0ad;
+            --accent: #7dd3fc;
+            --radius: 12px;
+            --max-width: 1200px;
+
+            /* SNAP preset: очень быстрое, "щёлкающее" появление */
+            --cell-delay-ms: 3ms;    /* задержка между соседними ячейками в каскаде */
+            --cell-duration: 140ms;  /* длительность анимации каждой ячейки */
+        }
+
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{
+            min-height:100vh;
+            background:linear-gradient(180deg,#071025 0%, #071827 60%) fixed;
+            color:#e6eef6;
+            font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+            line-height:1.5;
+        }
+
+        .wrap{max-width:var(--max-width);margin:0 auto;padding:20px;}
+        header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px;}
+        header h1{font-size:20px;font-weight:700;letter-spacing:0.3px;}
+        header p{color:var(--muted);font-size:13px;}
+
+        .tabs{display:flex;gap:8px;background:rgba(255,255,255,0.05);padding:6px;border-radius:999px;box-shadow:0 2px 12px rgba(0,0,0,0.5);}
+        .tab-btn{padding:10px 16px;border:none;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;font-weight:600;transition:.12s;}
+        .tab-btn.active{background:linear-gradient(90deg,#2b6cb0 0%, #9b2c2c 100%);color:#fff;box-shadow:0 0 20px rgba(0,0,0,0.6);}
+
+        .card{background:rgba(255,255,255,0.02);border-radius:var(--radius);padding:16px;box-shadow:0 8px 30px rgba(2,6,23,0.7);}
+
+        .layout{display:grid;grid-template-columns:1fr 420px;gap:16px;}
+        @media(max-width:980px){.layout{grid-template-columns:1fr;}}
+
+        .main{display:flex;flex-direction:column;gap:16px;}
+        .side{display:flex;flex-direction:column;gap:12px;}
+
+        /* Grid: скрыта до появления */
+        .grid-heat{
+            display:grid;
+            gap:8px;
+            grid-template-columns:repeat(auto-fit,minmax(44px,1fr));
+            align-items:center;
+            opacity:0;
+            transform:translateY(10px);
+            transition:opacity .18s ease, transform .18s ease;
+        }
+        .grid-heat.visible{opacity:1;transform:none;}
+
+        /* Ячейки: стартовые стили + transition. Easing подобран для "щёлкающего" эффекта */
+        .cell{
+            aspect-ratio:1/1;border-radius:8px;display:flex;align-items:center;justify-content:center;
+            font-weight:700;font-size:12px;color:rgba(0,0,0,0.85);cursor:pointer;
+            box-shadow:inset 0 2px 8px rgba(2,6,12,0.45);
+            opacity:0;
+            transform:translateY(10px) scale(0.98);
+            transition:
+                    opacity var(--cell-duration) cubic-bezier(.4,0,.6,1) calc(var(--i,0) * var(--cell-delay-ms)),
+                    transform var(--cell-duration) cubic-bezier(.4,0,.6,1) calc(var(--i,0) * var(--cell-delay-ms));
+        }
+        .grid-heat.visible .cell{opacity:1;transform:none;}
+        .cell:hover{transform:translateY(-4px) scale(1.03);box-shadow:0 6px 25px rgba(0,0,0,0.55);z-index:3;}
+
+        /* Подсветка (опциональный блок использует этот класс) */
+        .cell.highlighted{
+            box-shadow: 0 0 0 4px rgba(125,211,252,0.12), 0 10px 30px rgba(0,0,0,0.55);
+            transform: translateY(-4px) scale(1.03);
+        }
+        #sideTable tbody tr.row-highlighted{ background: rgba(125,211,252,0.06); }
+
+        .table{width:100%;border-collapse:collapse;font-size:13px;}
+        .table th,.table td{padding:8px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);}
+        .table th{color:#fff;font-weight:600;}
+
+        .legend{display:flex;align-items:center;gap:10px;margin-top:8px;}
+        .legend .bar{flex:1;height:12px;border-radius:8px;background:linear-gradient(90deg,#16a34a 0%,#bef264 30%,#facc15 50%,#f97316 75%,#ef4444 100%);box-shadow:inset 0 -2px 6px rgba(0,0,0,0.3);}
+
+        .small{font-size:12px;color:var(--muted);}
+        .tooltip{position:fixed;pointer-events:none;padding:8px 10px;border-radius:8px;background:rgba(10,12,18,0.95);color:#fff;font-size:13px;z-index:9999;transform:translate(-50%,-120%);box-shadow:0 8px 30px rgba(0,0,0,0.6);}
+
+        footer{color:var(--muted);font-size:13px;text-align:center;margin-top:20px;}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div>
+            <h1>Genshin Impact — Таблица шансов</h1>
+            <p>Интерактивная heatmap для баннеров <strong>Персонажей</strong> (90 круток) и <strong>Оружия</strong> (80 круток).</p>
+        </div>
+        <div class="tabs" role="tablist">
+            <button class="tab-btn" id="tab-characters" onclick="switchTab('characters')">Персонажи</button>
+            <button class="tab-btn" id="tab-weapons" onclick="switchTab('weapons')">Оружие</button>
+        </div>
+    </header>
+
+    <div class="layout card">
+        <div class="main">
+            <div class="card">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <div>
+                        <strong id="bannerTitle">Легендарные персонажи — 90 круток = 100%</strong>
+                        <div class="small" id="bannerDesc">Чем больше круток — тем выше процент (хуже шанс).</div>
+                    </div>
+                    <div class="small">Показ: <span id="countRange"></span></div>
+                </div>
+                <div id="gridView" class="grid-heat" role="grid" aria-live="polite"></div>
+            </div>
+
+            <div class="card small">
+                <strong>Как читать</strong>
+                <div style="margin-top:8px; white-space:pre-line;">
+                    Чем меньше круток (зелёная зона) — тем лучше результат. Хорошо.
+                    Чем больше круток (красная зона) — тем хуже результат. Плохо.
+                </div>
+            </div>
+        </div>
+
+        <aside class="side">
+            <div class="card">
+                <div class="small">Легенда цвета</div>
+                <div class="legend">
+                    <div class="small">Мало</div>
+                    <div class="bar" aria-hidden="true"></div>
+                    <div class="small">Много</div>
+                </div>
+                <div class="small" style="margin-top:6px;">
+                    &lt;=50 зелёное • 51–65 жёлто-зелёное • 66–79 оранжевое • 80+ красное
+                </div>
+            </div>
+
+            <div class="card">
+                <strong>Таблица (список)</strong>
+                <div style="max-height:360px;overflow:auto;margin-top:8px;">
+                    <table class="table" id="sideTable">
+                        <thead><tr><th>№</th><th>%</th><th>Целое</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <footer>© 2025 MOONWALKERS | Таблица шансов (адаптировано под GitLab Pages)</footer>
+</div>
+
+<div id="tooltip" class="tooltip" style="display:none;"></div>
+
+<script>
+    /* ====== Конфигурация баннеров ====== */
+    const BANNERS = {
+        characters: { label: 'Легендарные персонажи', max: 90 },
+        weapons:    { label: 'Легендарное оружие', max: 80 }
+    };
+
+    /* ====== State & DOM refs ====== */
+    const STATE = { active: 'characters' };
+    const gridEl = document.getElementById('gridView');
+    const titleEl = document.getElementById('bannerTitle');
+    const descEl = document.getElementById('bannerDesc');
+    const rangeEl = document.getElementById('countRange');
+    const sideBody = document.querySelector('#sideTable tbody');
+    const tooltip = document.getElementById('tooltip');
+
+    /* ====== Цветовые стопы и хелперы ====== */
+    const COLOR_STOPS = [
+        { pct: 0,   color: '#16a34a' },
+        { pct: 40,  color: '#bef264' },
+        { pct: 60,  color: '#facc15' },
+        { pct: 80,  color: '#f97316' },
+        { pct: 100, color: '#ef4444' }
+    ];
+    function hexToRgb(hex){
+        hex = hex.replace('#','');
+        if(hex.length === 3) hex = hex.split('').map(h => h+h).join('');
+        const n = parseInt(hex,16);
+        return [(n>>16)&255, (n>>8)&255, n&255];
+    }
+    function rgbToHex(r,g,b){ return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join(''); }
+    function lerp(a,b,t){ return a + (b-a) * t; }
+    function getColorForPercent(pct){
+        pct = Math.max(0, Math.min(100, pct));
+        let left = COLOR_STOPS[0], right = COLOR_STOPS[COLOR_STOPS.length-1];
+        for(let i=0;i<COLOR_STOPS.length-1;i++){
+            if(pct >= COLOR_STOPS[i].pct && pct <= COLOR_STOPS[i+1].pct){
+                left = COLOR_STOPS[i]; right = COLOR_STOPS[i+1]; break;
+            }
+        }
+        const range = right.pct - left.pct || 1;
+        const t = (pct - left.pct) / range;
+        const lc = hexToRgb(left.color), rc = hexToRgb(right.color);
+        const r = Math.round(lerp(lc[0], rc[0], t));
+        const g = Math.round(lerp(lc[1], rc[1], t));
+        const b = Math.round(lerp(lc[2], rc[2], t));
+        return rgbToHex(r,g,b);
+    }
+    function fmtPct(n){ return n.toFixed(2) + '%'; }
+
+    /* ====== Утилиты ====== */
+    function clearChildren(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+    function generateData(max){ return Array.from({length:max},(_,i)=>({rolls:i+1, percent: ((i+1)/max)*100})); }
+
+    /* ====== Новый порядок каскада: РЯДЫ сверху-вниз (row-major) ======
+       - Сортируем ячейки сначала по offsetTop (вверх->вниз), затем по offsetLeft (лево->право)
+       - Назначаем индекс --i в таком порядке, чтобы каскад шел ряд за рядом сверху вниз
+    */
+    function assignStaggerIndicesRowMajor(){
+        const cells = Array.from(gridEl.children);
+        const pos = cells.map(c => ({ el: c, top: Math.round(c.offsetTop), left: Math.round(c.offsetLeft) }));
+        // sort by top (row), then by left (col)
+        pos.sort((a,b) => {
+            if(a.top !== b.top) return a.top - b.top;
+            return a.left - b.left;
+        });
+        pos.forEach((p, idx) => {
+            p.el.style.setProperty('--i', idx);
+        });
+    }
+
+    /* ====== Рендер ====== */
+    function render(){
+        const cfg = BANNERS[STATE.active];
+        const data = generateData(cfg.max);
+
+        titleEl.textContent = `${cfg.label} — ${cfg.max} круток = 100%`;
+        descEl.textContent  = `Чем больше круток — тем выше процент (хуже шанс).`;
+        rangeEl.textContent = `1 — ${cfg.max}`;
+
+        // hide grid, clear children
+        gridEl.classList.remove('visible');
+        clearChildren(gridEl);
+
+        // create cells and attach tooltip handlers; set data-rolls for mapping
+        data.forEach(d => {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.rolls = d.rolls;                // важно для синхронизации
+            cell.style.background = getColorForPercent(d.percent);
+            cell.textContent = d.rolls;
+            cell.setAttribute('role','gridcell');
+            cell.addEventListener('pointerenter', e => showTooltip(e, d));
+            cell.addEventListener('pointermove', moveTooltip);
+            cell.addEventListener('pointerleave', hideTooltip);
+            gridEl.appendChild(cell);
+        });
+
+        // rebuild side table
+        clearChildren(sideBody);
+        data.forEach(d=>{
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${d.rolls}</td><td>${fmtPct(d.percent)}</td><td>${Math.round(d.percent)}%</td>`;
+            sideBody.appendChild(tr);
+        });
+
+        // после layout — назначаем индексы в row-major порядке и показываем сетку
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                assignStaggerIndicesRowMajor();
+                gridEl.classList.add('visible');
+            }, 4); // SNAP small timeout (2ms) — можно уменьшить на 0..2 при желании
+        });
+
+        // persist tab
+        try { localStorage.setItem('lastBanner', STATE.active); } catch(e){/* ignore */ }
+    }
+
+    /* ====== Tooltip ====== */
+    function showTooltip(evt, d){
+        tooltip.style.display = 'block';
+        tooltip.innerHTML = `<div style="font-size:13px">Круток: <strong>${d.rolls}</strong></div>
+                           <div style="font-size:12px;color:#cfeef8;margin-top:4px">Процент: <strong>${fmtPct(d.percent)}</strong></div>`;
+        moveTooltip(evt);
+    }
+    function moveTooltip(e){ tooltip.style.left = e.clientX + 'px'; tooltip.style.top = e.clientY + 'px'; }
+    function hideTooltip(){ tooltip.style.display = 'none'; }
+
+    /* ====== Вкладки ====== */
+    function switchTab(key){
+        if(!BANNERS[key]) return;
+        STATE.active = key;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById('tab-' + key);
+        if(btn) btn.classList.add('active');
+        render();
+    }
+
+    /* ====== init ====== */
+    (function init(){
+        // restore last tab
+        try {
+            const saved = localStorage.getItem('lastBanner');
+            if(saved && BANNERS[saved]) STATE.active = saved;
+        } catch(e){/* ignore */}
+
+        // set active btn
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        const initialBtn = document.getElementById('tab-' + STATE.active);
+        if(initialBtn) initialBtn.classList.add('active');
+
+        render();
+
+        document.addEventListener('keydown', (e) => {
+            if(e.key === '1') switchTab('characters');
+            if(e.key === '2') switchTab('weapons');
+        });
+
+        window.addEventListener('scroll', () => tooltip.style.display = 'none');
+    })();
+</script>
+
+<!--
+  Опциональный блок: синхронное подсвечивание строки правой таблицы <-> ячейки heatmap.
+  Если не нужно — просто удалите этот <script id="sync-highlight">...</script> целиком.
+  Блок автономен и не ломает остальной код при удалении.
+-->
+<script id="sync-highlight">
+    (function(){
+        function wireSync(){
+            const sideRows = Array.from(document.querySelectorAll('#sideTable tbody tr'));
+            const cells = Array.from(document.querySelectorAll('#gridView .cell'));
+            if(sideRows.length === 0 || cells.length === 0) {
+                setTimeout(wireSync, 120);
+                return;
+            }
+            sideRows.forEach(tr => { tr.onmouseenter = tr.onmouseleave = null; });
+            cells.forEach(c => { c.onmouseenter = c.onmouseleave = null; });
+
+            sideRows.forEach(tr => {
+                tr.addEventListener('mouseenter', () => {
+                    const num = tr.children[0].textContent.trim();
+                    const cell = document.querySelector(`#gridView .cell[data-rolls="${num}"]`);
+                    if(cell) cell.classList.add('highlighted');
+                    tr.classList.add('row-highlighted');
+                });
+                tr.addEventListener('mouseleave', () => {
+                    const num = tr.children[0].textContent.trim();
+                    const cell = document.querySelector(`#gridView .cell[data-rolls="${num}"]`);
+                    if(cell) cell.classList.remove('highlighted');
+                    tr.classList.remove('row-highlighted');
+                });
+            });
+
+            cells.forEach(cell => {
+                cell.addEventListener('mouseenter', () => {
+                    const num = cell.dataset.rolls;
+                    const row = Array.from(document.querySelectorAll('#sideTable tbody tr'))
+                        .find(r => r.children[0].textContent.trim() === String(num));
+                    if(row) row.classList.add('row-highlighted');
+                    cell.classList.add('highlighted');
+                });
+                cell.addEventListener('mouseleave', () => {
+                    const num = cell.dataset.rolls;
+                    const row = Array.from(document.querySelectorAll('#sideTable tbody tr'))
+                        .find(r => r.children[0].textContent.trim() === String(num));
+                    if(row) row.classList.remove('row-highlighted');
+                    cell.classList.remove('highlighted');
+                });
+            });
+        }
+
+        const tryWire = () => {
+            wireSync();
+            let retries = 6;
+            const repeater = setInterval(() => {
+                wireSync();
+                retries--;
+                if(retries <= 0) clearInterval(repeater);
+            }, 400);
+        };
+        setTimeout(tryWire, 40);
+        document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+            setTimeout(wireSync, 60);
+        }));
+        window.addEventListener('unload', () => {});
+    })();
+</script>
+</body>
+</html>
