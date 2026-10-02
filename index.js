@@ -23,6 +23,7 @@ const rangeEl = el('countRange');
 const sideBody = document.querySelector('#sideTable tbody');
 const tooltip = el('tooltip');
 const statsEl = el('bannerStats');
+const tableExampleEl = el('tableExample');
 const currentPityEl = el('currentPity');
 const futurePullsEl = el('futurePulls');
 const characterGuaranteeWrap = el('characterGuaranteeWrap');
@@ -148,13 +149,24 @@ function renderHeatmap(type) {
   const data = firstFiveStarDistribution(type);
   const targetSeries = targetChanceSeries(type, cfg.hardPity, freshTargetOptions(type));
 
-  titleEl.textContent = `${cfg.label} — реальные шансы по круткам`;
-  descEl.textContent = 'Наведись на номер крутки, чтобы увидеть шанс 5★ именно сейчас, накопленный шанс и вероятность получить нужную цель.';
+  titleEl.textContent = `${cfg.label} — тепловая карта (Heat Map)`;
+  descEl.textContent = 'Цвет показывает, насколько близко к жёсткому гаранту эта крутка. Наведи на номер, чтобы увидеть точные шансы.';
   rangeEl.textContent = `1 — ${cfg.hardPity}`;
 
   gridEl.classList.remove('visible');
   clearChildren(gridEl);
   clearChildren(sideBody);
+
+  const exampleIndex = cfg.softPityStart - 1;
+  const exampleRow = data[exampleIndex];
+  const targetName = type === 'characters' ? 'нужного баннерного персонажа' : 'нужное выбранное оружие';
+  tableExampleEl.innerHTML = `
+    <b>Пример на ${cfg.softPityStart}-й крутке:</b>
+    если ты дошёл до неё без 5★, шанс выбить 5★ <b>именно сейчас — ${fmtPct(exampleRow.hazard)}</b>.
+    Но шанс, что <b>любой 5★ уже выпадет к этому моменту — ${fmtPct(exampleRow.cumulative)}</b>.
+    А шанс уже получить <b>${targetName} — ${fmtPct(targetSeries[exampleIndex])}</b>.
+    Поэтому эти три процента и отличаются.
+  `;
 
   data.forEach((row, index) => {
     const cell = document.createElement('div');
