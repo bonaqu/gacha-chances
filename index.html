@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="Математическая таблица шансов баннеров Genshin Impact: pity, soft pity, вероятность 5★ и целевого персонажа или оружия." />
-  <title>Genshin Impact — Таблица шансов | Heatmap</title>
+  <meta name="description" content="Понятная таблица шансов баннеров Genshin Impact: гарант, софт-гарант, шанс 5★ и вероятность получить нужного персонажа или оружие." />
+  <title>Genshin Impact — Шансы баннеров и гарант</title>
   <link rel="icon" href="./favicon.png" />
 
   <style>
@@ -62,9 +62,22 @@
     .result span{display:block;color:var(--muted);font-size:11px;}
     .result strong{display:block;margin-top:2px;font-size:15px;}
     .formula{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#cfeef8;}
+    .quick-help{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;}
+    .quick-item{background:rgba(255,255,255,.035);border-radius:10px;padding:12px;min-height:94px;}
+    .quick-item strong{display:block;margin-bottom:5px;font-size:13px;}
+    .quick-item span{color:var(--muted);font-size:12px;line-height:1.45;}
+    .paimon-note{display:flex;gap:14px;align-items:center;margin-top:12px;padding:12px 14px;border-radius:10px;background:linear-gradient(135deg,rgba(125,211,252,.10),rgba(250,204,21,.08));border:1px solid rgba(255,255,255,.07);overflow:hidden;}
+    .paimon-art{width:72px;height:72px;object-fit:contain;flex:0 0 72px;filter:drop-shadow(0 6px 12px rgba(0,0,0,.28));}
+    .paimon-copy strong{display:block;margin-bottom:3px;}
+    .paimon-copy p{font-size:12px;color:#d9e4ef;}
+    .explain-list{margin-top:8px;display:grid;gap:6px;}
+    .explain-list div{color:#d9e4ef;}
+    .explain-list b{color:#fff;}
+    .term{border-bottom:1px dotted rgba(255,255,255,.35);cursor:help;}
     footer{color:var(--muted);font-size:13px;text-align:center;margin-top:20px;}
     [hidden]{display:none!important;}
-    @media(max-width:520px){.wrap{padding:12px}.stats,.planner-grid,.planner-results{grid-template-columns:1fr}.grid-heat{grid-template-columns:repeat(auto-fit,minmax(38px,1fr));gap:6px}.layout.card{padding:10px}.tooltip{white-space:normal;max-width:90vw}}
+    @media(max-width:900px){.quick-help{grid-template-columns:repeat(2,minmax(0,1fr));}}
+    @media(max-width:520px){.wrap{padding:12px}.stats,.planner-grid,.planner-results,.quick-help{grid-template-columns:1fr}.grid-heat{grid-template-columns:repeat(auto-fit,minmax(38px,1fr));gap:6px}.layout.card{padding:10px}.tooltip{white-space:normal;max-width:90vw}.paimon-art{width:58px;height:58px;flex-basis:58px}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.grid-heat,.cell{transition:none!important}}
   </style>
 </head>
@@ -73,13 +86,50 @@
   <header>
     <div>
       <h1>Genshin Impact — Таблица шансов</h1>
-      <p>Heatmap реальных вероятностей для баннеров <strong>Персонажей</strong> и <strong>Оружия</strong>.</p>
+      <p>Понятная таблица шансов для баннеров <strong>Персонажей</strong> и <strong>Оружия</strong> — сколько реально шансов на 5★ и нужную цель на каждой крутке.</p>
     </div>
     <div class="tabs" role="tablist" aria-label="Тип баннера">
       <button class="tab-btn" id="tab-characters" role="tab">Персонажи</button>
       <button class="tab-btn" id="tab-weapons" role="tab">Оружие</button>
     </div>
   </header>
+
+  <section class="card" style="margin-bottom:16px;">
+    <strong>Как читать таблицу</strong>
+    <div class="quick-help">
+      <div class="quick-item">
+        <strong>5★ на этой крутке</strong>
+        <span>Шанс получить 5★ именно сейчас, если до этой крутки 5★ ещё не выпал.</span>
+      </div>
+      <div class="quick-item">
+        <strong>5★ к этой крутке</strong>
+        <span>Шанс, что к этому моменту у тебя уже будет хотя бы один 5★.</span>
+      </div>
+      <div class="quick-item">
+        <strong>Нужная цель</strong>
+        <span>Шанс уже получить именно выбранного баннерного персонажа или оружие.</span>
+      </div>
+      <div class="quick-item">
+        <strong>Софт-гарант</strong>
+        <span>Зона, где шанс 5★ начинает резко расти от крутки к крутке.</span>
+      </div>
+    </div>
+
+    <div class="paimon-note">
+      <img
+        class="paimon-art"
+        src="https://genshin-impact.fandom.com/wiki/Special:Redirect/file/Paimon_Portrait.png"
+        alt="Паймон"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        onerror="this.style.display='none'"
+      />
+      <div class="paimon-copy">
+        <strong>Паймон подсказывает ✨</strong>
+        <p>Если хочется одного ответа без математики — смотри на <b>«Нужная цель»</b>. Это вероятность уже получить именно того персонажа или то оружие, ради которого ты крутишь баннер.</p>
+      </div>
+    </div>
+  </section>
 
   <div class="layout card">
     <main class="main">
@@ -89,64 +139,71 @@
             <strong id="bannerTitle"></strong>
             <div class="small" id="bannerDesc"></div>
           </div>
-          <div class="small">Pity: <span id="countRange"></span></div>
+          <div class="small"><span class="term" title="Счётчик круток после последнего 5★">Счётчик гаранта</span>: <span id="countRange"></span></div>
         </div>
         <div id="gridView" class="grid-heat" role="grid" aria-live="polite"></div>
       </section>
 
       <section class="card small">
-        <strong>Как считается</strong>
-        <div style="margin-top:8px;display:grid;gap:5px;">
-          <div><span class="formula">P(T=n)=S(n−1)·pₙ</span> — шанс получить первый 5★ ровно на n-й крутке.</div>
-          <div><span class="formula">P(T≤n)=1−∏(1−pᵢ)</span> — накопленный шанс получить 5★ к n-й крутке.</div>
-          <div><span class="formula">S(n)=∏(1−pᵢ)</span> — вероятность дожить до следующей крутки без 5★.</div>
-          <div>Soft pity — <strong>эмпирическая</strong> модель сообщества; HoYoverse публикует базовые/сводные ставки и гаранты, но не формулу роста по каждой крутке.</div>
-          <div>* «Целевой 5★» для персонажа использует официальный сводный 55% шанс промо-персонажа на негарантированном 5★ с Capturing Radiance; это агрегат, а не восстановление скрытого состояния конкретного аккаунта.</div>
+        <strong>Как считаются шансы</strong>
+        <div class="explain-list">
+          <div><b>5★ на этой крутке</b> — шанс получить 5★ именно сейчас при текущем счётчике гаранта.</div>
+          <div><b>5★ к этой крутке</b> — накопленный шанс получить хотя бы один 5★ к выбранному номеру.</div>
+          <div><b>Нужная цель</b> — шанс получить именно баннерного персонажа или выбранное оружие с учётом гарантий.</div>
+          <div><b>Софт-гарант</b> — зона повышенного шанса, рассчитанная здесь по статистической модели сообщества. HoYoverse публикует базовые шансы и жёсткий гарант, но точную формулу роста по каждой крутке не раскрывает.</div>
+          <details>
+            <summary style="cursor:pointer;color:#cfeef8;">Показать формулы</summary>
+            <div style="margin-top:7px;display:grid;gap:5px;">
+              <div><span class="formula">P(T=n)=S(n−1)·pₙ</span> — шанс первого 5★ ровно на n-й крутке.</div>
+              <div><span class="formula">P(T≤n)=1−∏(1−pᵢ)</span> — шанс получить 5★ к n-й крутке.</div>
+              <div><span class="formula">S(n)=∏(1−pᵢ)</span> — шанс дойти до следующей крутки без 5★.</div>
+            </div>
+          </details>
         </div>
       </section>
     </main>
 
     <aside class="side">
       <section class="card">
-        <strong>Параметры модели</strong>
+        <strong>Коротко о шансах</strong>
         <div id="bannerStats" class="stats"></div>
       </section>
 
       <section class="card">
-        <strong>Калькулятор от твоего pity</strong>
+        <strong>Калькулятор от твоего счётчика гаранта</strong>
         <div class="planner-grid">
           <div class="field">
-            <label for="currentPity">Уже без 5★</label>
+            <label for="currentPity">Круток после последнего 5★</label>
             <input id="currentPity" type="number" min="0" step="1" inputmode="numeric" />
           </div>
           <div class="field">
-            <label for="futurePulls">План круток</label>
+            <label for="futurePulls">Сколько круток планируешь</label>
             <input id="futurePulls" type="number" min="0" step="1" inputmode="numeric" />
           </div>
         </div>
 
         <div id="characterGuaranteeWrap">
-          <label class="check"><input id="characterGuarantee" type="checkbox" /> Следующий 5★ уже гарантированно баннерный персонаж</label>
+          <label class="check"><input id="characterGuarantee" type="checkbox" /> Следующий 5★ точно будет баннерным персонажем</label>
         </div>
 
         <div id="weaponFateWrap" hidden>
           <div class="field" style="margin-top:9px;">
-            <label for="weaponFatePoint">Очки Судьбы (Epitomized Path)</label>
-            <select id="weaponFatePoint"><option value="0">0</option><option value="1">1 — следующий 5★ выбранный</option></select>
+            <label for="weaponFatePoint">Очко судьбы (оружейный гарант)</label>
+            <select id="weaponFatePoint"><option value="0">0</option><option value="1">1 — следующий 5★ будет выбранным оружием</option></select>
           </div>
-          <label class="check"><input id="weaponGuarantee" type="checkbox" /> Следующий 5★ гарантированно одно из двух промо-оружий</label>
+          <label class="check"><input id="weaponGuarantee" type="checkbox" /> Следующий 5★ точно будет одним из двух баннерных оружий</label>
         </div>
 
         <div class="planner-results">
           <div class="result"><span>Хотя бы один 5★</span><strong id="plannerAny">—</strong></div>
-          <div class="result"><span>Целевой 5★</span><strong id="plannerTarget">—</strong></div>
-          <div class="result"><span>Худший случай до цели</span><strong id="plannerWorst">—</strong></div>
-          <div class="result"><span>Цена выбранных круток</span><strong id="plannerPrimogems">—</strong></div>
+          <div class="result"><span>Нужная цель</span><strong id="plannerTarget">—</strong></div>
+          <div class="result"><span>Максимум до гарантированной цели</span><strong id="plannerWorst">—</strong></div>
+          <div class="result"><span>Нужно Камней Истока</span><strong id="plannerPrimogems">—</strong></div>
         </div>
       </section>
 
       <section class="card">
-        <div class="small">Легенда цвета: ранний → поздний pity</div>
+        <div class="small">Цвет: ранняя → поздняя крутка</div>
         <div class="legend"><div class="small">Рано</div><div class="bar" aria-hidden="true"></div><div class="small">Поздно</div></div>
       </section>
 
@@ -154,7 +211,7 @@
         <strong>Таблица вероятностей</strong>
         <div style="max-height:360px;overflow:auto;margin-top:8px;">
           <table class="table" id="sideTable">
-            <thead><tr><th>№</th><th>5★ сейчас</th><th>5★ ≤ №</th><th>Цель ≤ №</th></tr></thead>
+            <thead><tr><th>Крутка</th><th>5★ сейчас</th><th>5★ к этому моменту</th><th>Нужная цель</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
