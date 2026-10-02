@@ -128,18 +128,18 @@ function renderStats(type) {
   const cfg = BANNERS[type];
   const stats = distributionStats(type);
   const empiricalNote = type === 'weapons'
-    ? `эмпирическая кривая достигает 100% на ${cfg.empiricalHardPity}-й`
-    : `эмпирическая кривая до hard pity ${cfg.hardPity}`;
+    ? `по модели максимум достигается примерно к ${cfg.empiricalHardPity}-й крутке`
+    : `по модели шанс растёт вплоть до ${cfg.hardPity}-й крутки`;
 
   statsEl.innerHTML = `
-    <div class="stat"><span>База 5★</span><strong>${fmtPct(cfg.baseRate, 1)}</strong></div>
-    <div class="stat"><span>Soft pity</span><strong>${cfg.softPityStart}+</strong></div>
-    <div class="stat"><span>Офиц. гарант</span><strong>${cfg.hardPity}</strong></div>
-    <div class="stat"><span>Среднее по модели</span><strong>${fmtNumber(stats.expectedPity, 2)} крут.</strong></div>
-    <div class="stat"><span>Сводный шанс модели</span><strong>${fmtPct(stats.modelConsolidatedRate, 3)}</strong></div>
-    <div class="stat"><span>Офиц. сводный шанс</span><strong>${fmtPct(cfg.officialConsolidatedRate, 2)}</strong></div>
-    <div class="stat"><span>Медиана / 95%</span><strong>${stats.medianPity} / ${stats.p95Pity}</strong></div>
-    <div class="stat"><span>Модель</span><strong title="Soft pity не опубликован HoYoverse">${empiricalNote}</strong></div>
+    <div class="stat"><span>Базовый шанс 5★</span><strong>${fmtPct(cfg.baseRate, 1)}</strong></div>
+    <div class="stat"><span>Софт-гарант начинается</span><strong>с ${cfg.softPityStart}-й</strong></div>
+    <div class="stat"><span>Жёсткий гарант</span><strong>${cfg.hardPity}-я крутка</strong></div>
+    <div class="stat"><span>Среднее до 5★ по модели</span><strong>${fmtNumber(stats.expectedPity, 2)} крут.</strong></div>
+    <div class="stat"><span>Средний шанс по модели</span><strong>${fmtPct(stats.modelConsolidatedRate, 3)}</strong></div>
+    <div class="stat"><span>Официальный средний шанс</span><strong>${fmtPct(cfg.officialConsolidatedRate, 2)}</strong></div>
+    <div class="stat"><span>50% / 95% игроков</span><strong>до ${stats.medianPity} / ${stats.p95Pity}</strong></div>
+    <div class="stat"><span>Примечание</span><strong title="Точная формула софт-гаранта не опубликована HoYoverse">${empiricalNote}</strong></div>
   `;
 }
 
@@ -148,8 +148,8 @@ function renderHeatmap(type) {
   const data = firstFiveStarDistribution(type);
   const targetSeries = targetChanceSeries(type, cfg.hardPity, freshTargetOptions(type));
 
-  titleEl.textContent = `${cfg.label} — реальное распределение 5★`;
-  descEl.textContent = 'Цвет показывает, насколько поздней является крутка; проценты внутри — математические, а не линейный прогресс до гаранта.';
+  titleEl.textContent = `${cfg.label} — реальные шансы по круткам`;
+  descEl.textContent = 'Наведись на номер крутки, чтобы увидеть шанс 5★ именно сейчас, накопленный шанс и вероятность получить нужную цель.';
   rangeEl.textContent = `1 — ${cfg.hardPity}`;
 
   gridEl.classList.remove('visible');
@@ -166,7 +166,7 @@ function renderHeatmap(type) {
     cell.setAttribute('tabindex', '0');
     cell.setAttribute(
       'aria-label',
-      `${row.pity}-я крутка: шанс 5 звёзд ${fmtPct(row.hazard)}, накопленный шанс ${fmtPct(row.cumulative)}`,
+      `${row.pity}-я крутка: шанс получить 5★ сейчас ${fmtPct(row.hazard)}, шанс получить 5★ к этому моменту ${fmtPct(row.cumulative)}`,
     );
     cell.addEventListener('pointerenter', (event) => showTooltip(event, row, targetSeries[index]));
     cell.addEventListener('pointermove', moveTooltip);
@@ -269,10 +269,10 @@ function switchTab(type) {
 function tooltipHtml(row, targetChance) {
   return `
     <div>Крутка: <strong>${row.pity}</strong></div>
-    <div>5★ именно сейчас: <strong>${fmtPct(row.hazard)}</strong></div>
-    <div>Первый 5★ ровно здесь: <strong>${fmtPct(row.exact, 3)}</strong></div>
-    <div>5★ уже получен к этой крутке: <strong>${fmtPct(row.cumulative)}</strong></div>
-    <div>Целевой 5★ к этой крутке*: <strong>${fmtPct(targetChance)}</strong></div>
+    <div>Шанс 5★ именно сейчас: <strong>${fmtPct(row.hazard)}</strong></div>
+    <div>Шанс первого 5★ именно здесь: <strong>${fmtPct(row.exact, 3)}</strong></div>
+    <div>Шанс получить 5★ к этому моменту: <strong>${fmtPct(row.cumulative)}</strong></div>
+    <div>Шанс уже получить нужную цель: <strong>${fmtPct(targetChance)}</strong></div>
   `;
 }
 
