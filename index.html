@@ -25,8 +25,13 @@
     header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px;}
     header h1{font-size:20px;font-weight:700;letter-spacing:.3px;}
     header p{color:var(--muted);font-size:13px;}
+    .header-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
     .tabs{display:flex;gap:8px;background:rgba(255,255,255,.05);padding:6px;border-radius:999px;box-shadow:0 2px 12px rgba(0,0,0,.5);}
     .tab-btn{padding:10px 16px;border:none;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;font-weight:600;transition:.12s;}
+    .mode-toggle{display:flex;gap:4px;padding:4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;}
+    .mode-btn{border:0;background:transparent;color:var(--muted);padding:7px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;}
+    .mode-btn.active{background:rgba(125,211,252,.14);color:#fff;}
+    .simple-mode [data-detail-only]{display:none!important;}
     .tab-btn.active{background:linear-gradient(90deg,#2b6cb0 0%,#9b2c2c 100%);color:#fff;box-shadow:0 0 20px rgba(0,0,0,.6);}
     .tab-btn:focus-visible,.cell:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
     .card{background:rgba(255,255,255,.02);border-radius:var(--radius);padding:16px;box-shadow:0 8px 30px rgba(2,6,23,.7);}
@@ -39,7 +44,21 @@
     .cell{aspect-ratio:1/1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:rgba(0,0,0,.85);cursor:pointer;box-shadow:inset 0 2px 8px rgba(2,6,12,.45);opacity:0;transform:translateY(10px) scale(.98);transition:opacity var(--cell-duration) cubic-bezier(.4,0,.6,1) calc(var(--i,0) * var(--cell-delay-ms)),transform var(--cell-duration) cubic-bezier(.4,0,.6,1) calc(var(--i,0) * var(--cell-delay-ms));}
     .grid-heat.visible .cell{opacity:1;transform:none;}
     .cell:hover,.cell.highlighted{transform:translateY(-4px) scale(1.03);box-shadow:0 0 0 4px rgba(125,211,252,.12),0 10px 30px rgba(0,0,0,.55);z-index:3;}
+    .cell.zone-soft{outline:2px solid rgba(250,204,21,.38);outline-offset:-2px;}
+    .cell.zone-hard{outline:3px solid rgba(239,68,68,.86);outline-offset:-3px;font-weight:900;}
+    .cell.past-pity{opacity:.32!important;filter:saturate(.55);}
+    .cell.current-pity{opacity:1!important;filter:none;box-shadow:0 0 0 3px #fff,0 0 0 6px rgba(125,211,252,.68),0 8px 24px rgba(0,0,0,.55);z-index:4;}
+    .cell.future-pity{opacity:1!important;}
+    .cell-number{line-height:1;font-size:12px;}
+    .cell-chance{display:block;margin-top:3px;font-size:8px;line-height:1;color:rgba(0,0,0,.72);font-weight:800;}
+    .heat-zones{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 6px;}
+    .zone-chip{font-size:11px;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);color:#dce7f0;}
+    .zone-chip.normal::before,.zone-chip.soft::before,.zone-chip.hard::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px;}
+    .zone-chip.normal::before{background:#5ea96c}.zone-chip.soft::before{background:#facc15}.zone-chip.hard::before{background:#ef4444}
+    .heat-personal-hint{min-height:18px;margin-bottom:7px;font-size:11px;color:#9bdcf7;}
     #sideTable tbody tr.row-highlighted{background:rgba(125,211,252,.06);}
+    #sideTable tbody tr.past-row{opacity:.42;}
+    #sideTable tbody tr.current-row{background:rgba(125,211,252,.10);outline:1px solid rgba(125,211,252,.24);}
     .table-wrap{max-height:420px;overflow-y:auto;overflow-x:hidden;margin-top:10px;border-radius:9px;border:1px solid rgba(255,255,255,.05);}
     .table{width:100%;min-width:0;border-collapse:collapse;font-size:11px;table-layout:fixed;}
     .table th,.table td{padding:8px 3px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle;overflow:hidden;}
@@ -73,7 +92,16 @@
     .field input,.field select{width:100%;border:1px solid rgba(255,255,255,.09);background:#08111f;color:#fff;border-radius:8px;padding:8px 10px;}
     .check{display:flex;gap:8px;align-items:flex-start;margin-top:9px;cursor:pointer;}
     .check input{margin-top:3px;accent-color:#7dd3fc;}
+    .fifty-card{margin-top:10px;padding:10px 11px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:11px;color:var(--muted);display:grid;gap:5px;line-height:1.4;}
+    .fifty-card strong,.fifty-card b{color:#fff;}
+    .fifty-card small{color:#83909d;}
     .planner-results{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+    .mobile-pity-card{display:none;margin-top:10px;padding:12px;border-radius:10px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);}
+    .mobile-pity-card .mobile-title{font-weight:800;margin-bottom:8px;}
+    .mobile-pity-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+    .mobile-pity-stat{padding:8px;border-radius:8px;background:rgba(0,0,0,.14);}
+    .mobile-pity-stat span{display:block;font-size:10px;color:var(--muted);}
+    .mobile-pity-stat strong{display:block;margin-top:2px;font-size:13px;}
     .result{background:rgba(255,255,255,.035);padding:9px;border-radius:8px;}
     .result span{display:block;color:var(--muted);font-size:11px;}
     .result strong{display:block;margin-top:2px;font-size:15px;}
@@ -93,7 +121,16 @@
     footer{color:var(--muted);font-size:13px;text-align:center;margin-top:20px;}
     [hidden]{display:none!important;}
     @media(max-width:900px){.quick-help{grid-template-columns:repeat(2,minmax(0,1fr));}.table-help{grid-template-columns:1fr;}}
-    @media(max-width:520px){.wrap{padding:12px}.stats,.planner-grid,.planner-results,.quick-help{grid-template-columns:1fr}.grid-heat{grid-template-columns:repeat(auto-fit,minmax(38px,1fr));gap:6px}.layout.card{padding:10px}.tooltip{white-space:normal;max-width:90vw}.paimon-art{width:58px;height:58px;flex-basis:58px}.table{font-size:11px}.table th,.table td{padding:6px 4px}}
+    @media(max-width:600px){
+      .wrap{padding:12px}.stats,.planner-grid,.planner-results,.quick-help{grid-template-columns:1fr}
+      .grid-heat{grid-template-columns:repeat(auto-fit,minmax(42px,1fr));gap:6px}
+      .layout.card{padding:10px}.tooltip{white-space:normal;max-width:90vw}.paimon-art{width:58px;height:58px;flex-basis:58px}
+      .header-controls{width:100%;justify-content:flex-start}
+      .mode-toggle{margin-left:0}
+      .table-wrap,.table-key,.table-help,.table-example{display:none!important}
+      .mobile-pity-card{display:block}
+      .cell-chance{font-size:7px}
+    }
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.grid-heat,.cell{transition:none!important}}
   </style>
 </head>
@@ -104,15 +141,21 @@
       <h1>Genshin Impact — Таблица шансов</h1>
       <p>Понятная таблица шансов для баннеров <strong>Персонажей</strong> и <strong>Оружия</strong> — сколько реально шансов на 5★ и нужную цель на каждой крутке.</p>
     </div>
-    <div class="tabs" role="tablist" aria-label="Тип баннера">
-      <button class="tab-btn" id="tab-characters" role="tab">Персонажи</button>
-      <button class="tab-btn" id="tab-weapons" role="tab">Оружие</button>
+    <div class="header-controls">
+      <div class="tabs" role="tablist" aria-label="Тип баннера">
+        <button class="tab-btn" id="tab-characters" role="tab">Персонажи</button>
+        <button class="tab-btn" id="tab-weapons" role="tab">Оружие</button>
+      </div>
+      <div class="mode-toggle" role="group" aria-label="Режим отображения">
+        <button class="mode-btn" id="mode-simple" type="button">Простой</button>
+        <button class="mode-btn" id="mode-detailed" type="button">Подробный</button>
+      </div>
     </div>
   </header>
 
-  <section class="card" style="margin-bottom:16px;">
-    <strong>Как читать таблицу</strong>
-    <div class="quick-help">
+  <section class="card intro-card" style="margin-bottom:16px;">
+    <strong data-detail-only>Как читать таблицу</strong>
+    <div class="quick-help" data-detail-only>
       <div class="quick-item">
         <strong>5★ на этой крутке</strong>
         <span>Шанс получить 5★ именно сейчас, если до этой крутки 5★ ещё не выпал.</span>
@@ -158,10 +201,13 @@
           </div>
           <div class="small"><span class="term" title="Счётчик круток после последнего 5★">Счётчик гаранта</span>: <span id="countRange"></span></div>
         </div>
+        <div id="heatZones" class="heat-zones" aria-label="Зоны гаранта"></div>
+        <div id="heatPersonalHint" class="heat-personal-hint"></div>
         <div id="gridView" class="grid-heat" role="grid" aria-live="polite"></div>
+        <div id="mobilePityCard" class="mobile-pity-card" aria-live="polite"></div>
       </section>
 
-      <section class="card small">
+      <section class="card small" data-detail-only>
         <strong>Как считаются шансы</strong>
         <div class="explain-list">
           <div><b>5★ на этой крутке</b> — шанс получить 5★ именно сейчас при текущем счётчике гаранта.</div>
@@ -181,7 +227,7 @@
     </main>
 
     <aside class="side">
-      <section class="card">
+      <section class="card" data-detail-only>
         <strong>Коротко о шансах</strong>
         <div id="bannerStats" class="stats"></div>
       </section>
@@ -201,6 +247,12 @@
 
         <div id="characterGuaranteeWrap">
           <label class="check"><input id="characterGuarantee" type="checkbox" /> Следующий 5★ точно будет баннерным персонажем</label>
+          <div class="fifty-card">
+            <strong>Что значит «гарантирован баннерный персонаж»?</strong>
+            <div><b>Выиграл 50/50:</b> выпал баннерный персонаж → следующий 5★ снова не гарантирован.</div>
+            <div><b>Проиграл 50/50:</b> выпал стандартный персонаж → включи галочку выше: следующий 5★ точно баннерный.</div>
+            <small>«50/50» — привычное название механики. В расчёте негарантированного 5★ сайт учитывает Capturing Radiance.</small>
+          </div>
         </div>
 
         <div id="weaponFateWrap" hidden>
@@ -214,17 +266,12 @@
         <div class="planner-results">
           <div class="result"><span>Хотя бы один 5★</span><strong id="plannerAny">—</strong></div>
           <div class="result"><span>Нужная цель</span><strong id="plannerTarget">—</strong></div>
-          <div class="result"><span>Максимум до гарантированной цели</span><strong id="plannerWorst">—</strong></div>
-          <div class="result"><span>Нужно Камней Истока</span><strong id="plannerPrimogems">—</strong></div>
+          <div class="result" data-detail-only><span>Максимум до гарантированной цели</span><strong id="plannerWorst">—</strong></div>
+          <div class="result"><span>Стоимость круток</span><strong id="plannerPrimogems">—</strong></div>
         </div>
       </section>
 
-      <section class="card">
-        <div class="small">Цвет: ранняя → поздняя крутка</div>
-        <div class="legend"><div class="small">Рано</div><div class="bar" aria-hidden="true"></div><div class="small">Поздно</div></div>
-      </section>
-
-      <section class="card">
+      <section class="card" data-detail-only>
         <strong>Таблица вероятностей</strong>
         <div class="table-key"><b>Главное:</b> первый процент — про <u>одну конкретную крутку</u>. Два остальных — про <u>весь путь от 1-й крутки до этой</u>.</div>
 
