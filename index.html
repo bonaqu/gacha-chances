@@ -40,19 +40,25 @@
     .grid-heat.visible .cell{opacity:1;transform:none;}
     .cell:hover,.cell.highlighted{transform:translateY(-4px) scale(1.03);box-shadow:0 0 0 4px rgba(125,211,252,.12),0 10px 30px rgba(0,0,0,.55);z-index:3;}
     #sideTable tbody tr.row-highlighted{background:rgba(125,211,252,.06);}
-    .table{width:100%;border-collapse:collapse;font-size:12px;}
-    .table th,.table td{padding:7px 5px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);white-space:nowrap;}
-    .table th{color:#fff;font-weight:600;background:#0c1524;}
-    .table thead tr:first-child th{position:sticky;top:0;z-index:2;}
-    .table thead tr:nth-child(2) th{position:sticky;top:31px;z-index:2;}
-    .table .group-now{background:rgba(125,211,252,.10);}
-    .table .group-path{background:rgba(250,204,21,.08);}
+    .table-wrap{max-height:420px;overflow:auto;margin-top:10px;border-radius:9px;border:1px solid rgba(255,255,255,.05);}
+    .table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;min-width:370px;}
+    .table th,.table td{padding:8px 6px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);}
+    .table td{white-space:nowrap;}
+    .table th{position:sticky;top:0;z-index:2;color:#fff;font-weight:700;background:#0c1524;line-height:1.25;white-space:normal;}
+    .table th:first-child,.table td:first-child{width:42px;}
+    .table th:nth-child(2){background:rgba(125,211,252,.12);}
+    .table th:nth-child(3),.table th:nth-child(4){background:rgba(250,204,21,.08);}
+    .table tbody tr:hover{background:rgba(255,255,255,.03);}
     .table-help{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;}
     .table-help-item{padding:9px 10px;border-radius:8px;background:rgba(255,255,255,.03);font-size:11px;color:var(--muted);line-height:1.4;}
     .table-help-item b{display:block;color:#fff;font-size:12px;margin-bottom:2px;}
+    .table-help-item .scope{display:inline-block;margin-top:5px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.05);color:#cfeef8;font-size:10px;}
     .table-example{margin-top:10px;padding:10px 11px;border-radius:8px;background:rgba(125,211,252,.06);border:1px solid rgba(125,211,252,.12);font-size:12px;color:#d9e4ef;line-height:1.45;}
     .table-example b{color:#fff;}
-    .table-key{margin-top:8px;font-size:11px;color:#cfeef8;}
+    .table-key{margin-top:8px;font-size:11px;color:#cfeef8;line-height:1.45;}
+    .asset-credit{margin-top:5px;font-size:10px;color:rgba(152,160,173,.78);}
+    .asset-credit a{color:#9bdcf7;text-decoration:none;}
+    .asset-credit a:hover{text-decoration:underline;}
     .legend{display:flex;align-items:center;gap:10px;margin-top:8px;}
     .legend .bar{flex:1;height:12px;border-radius:8px;background:linear-gradient(90deg,#16a34a 0%,#bef264 30%,#facc15 50%,#f97316 75%,#ef4444 100%);box-shadow:inset 0 -2px 6px rgba(0,0,0,.3);}
     .small{font-size:12px;color:var(--muted);}
@@ -126,41 +132,19 @@
     </div>
 
     <div class="paimon-note">
-      <svg class="paimon-art" viewBox="0 0 120 120" role="img" aria-label="Паймон" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="paimonHalo" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#f8d79a"/>
-            <stop offset="1" stop-color="#d9a85f"/>
-          </linearGradient>
-          <linearGradient id="paimonHair" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#ffffff"/>
-            <stop offset="1" stop-color="#e9edf3"/>
-          </linearGradient>
-        </defs>
-        <g stroke="#34445a" stroke-width="2.6" stroke-linejoin="round">
-          <ellipse cx="60" cy="16" rx="26" ry="7" fill="none" stroke="url(#paimonHalo)" stroke-width="5"/>
-          <path d="M60 7l5 8-5 8-5-8z" fill="#e8b96f" stroke="#b98543"/>
-          <path d="M34 45c0-18 11-28 26-28s26 10 26 28c0 12-5 25-11 32H45c-6-7-11-20-11-32z" fill="url(#paimonHair)"/>
-          <path d="M41 38l-8 5 7 4-7 8 11 1-5 9 13-2" fill="url(#paimonHair)"/>
-          <path d="M79 37l9 5-7 5 7 8-11 1 5 9-13-2" fill="url(#paimonHair)"/>
-          <ellipse cx="60" cy="51" rx="20" ry="19" fill="#ffd9c7" stroke="none"/>
-          <path d="M46 31c8 5 20 4 29-2-3 7-6 10-13 13-7-2-12-5-16-11z" fill="#fff" stroke="none"/>
-          <ellipse cx="53" cy="51" rx="3.5" ry="5" fill="#66789a" stroke="none"/>
-          <ellipse cx="68" cy="51" rx="3.5" ry="5" fill="#66789a" stroke="none"/>
-          <circle cx="52.2" cy="49.7" r="1.2" fill="#fff" stroke="none"/>
-          <circle cx="67.2" cy="49.7" r="1.2" fill="#fff" stroke="none"/>
-          <path d="M56 60c2.5 2 5.5 2 8 0" fill="none" stroke="#b56f6a" stroke-width="2"/>
-          <path d="M77 36l5-7 2 8 8 2-7 5 1 8-7-5-7 4 3-8-5-6z" fill="#24364f" stroke="none"/>
-          <path d="M43 72c8 7 26 7 34 0l7 9-9 8H45l-9-8z" fill="#233650"/>
-          <path d="M46 83h28l8 20c-12 8-32 8-44 0z" fill="#f7f7f5"/>
-          <path d="M45 89l-13 8 5 8 13-5M75 89l13 8-5 8-13-5" fill="#f6c98d"/>
-          <path d="M60 87l5 6-5 8-5-8z" fill="#e2ad61" stroke="#b98543"/>
-          <path d="M47 103c8 5 18 5 26 0" fill="none" stroke="#d9a85f" stroke-width="3"/>
-        </g>
-      </svg>
+      <img
+        class="paimon-art"
+        src="https://raw.githubusercontent.com/MadeBaruna/paimon-moe/0a88d5391005a4331a1413966528dd1762ce2614/static/paimon-og.png"
+        alt="Паймон"
+        width="72"
+        height="72"
+        loading="lazy"
+        decoding="async"
+      />
       <div class="paimon-copy">
         <strong>Паймон подсказывает ✨</strong>
         <p>Если хочется одного ответа без математики — смотри на <b>«Нужная цель»</b>. Это вероятность уже получить именно того персонажа или то оружие, ради которого ты крутишь баннер.</p>
+        <div class="asset-credit">Изображение: <a href="https://github.com/MadeBaruna/paimon-moe" target="_blank" rel="noopener noreferrer">Paimon.moe</a> • Genshin Impact © HoYoverse</div>
       </div>
     </div>
   </section>
@@ -248,32 +232,31 @@
         <div class="table-help">
           <div class="table-help-item">
             <b>5★ сейчас</b>
-            Ты дошёл до этой крутки без 5★. Каков шанс, что 5★ выпадет именно на ней?
+            Шанс на <u>одной конкретной крутке</u>, если до неё 5★ ещё не выпал.
+            <span class="scope">только эта крутка</span>
           </div>
           <div class="table-help-item">
-            <b>Любой 5★ уже</b>
-            Каков шанс, что к этой крутке у тебя уже успел выпасть хотя бы один 5★?
+            <b>Любой 5★ к №</b>
+            Шанс, что хотя бы один 5★ уже выпадет <u>с 1-й крутки до этого номера</u>.
+            <span class="scope">весь путь до №</span>
           </div>
           <div class="table-help-item">
-            <b>Нужный 5★ уже</b>
-            Каков шанс, что к этой крутке уже выпала именно баннерная цель с учётом гарантов?
+            <b>Нужный 5★ к №</b>
+            Шанс, что за тот же путь уже выпадет <u>именно нужная баннерная цель</u>.
+            <span class="scope">весь путь + гаранты</span>
           </div>
         </div>
 
         <div id="tableExample" class="table-example"></div>
 
-        <div style="max-height:420px;overflow:auto;margin-top:10px;">
+        <div class="table-wrap">
           <table class="table" id="sideTable">
             <thead>
               <tr>
-                <th rowspan="2">№</th>
-                <th class="group-now">На этой крутке</th>
-                <th class="group-path" colspan="2">За весь путь до неё</th>
-              </tr>
-              <tr>
-                <th class="group-now">5★ сейчас</th>
-                <th class="group-path">Любой 5★ уже</th>
-                <th class="group-path">Нужный 5★ уже</th>
+                <th title="Номер крутки после последнего 5★">№</th>
+                <th title="Шанс 5★ именно на этой крутке, если ты до неё дошёл без 5★">5★ сейчас</th>
+                <th title="Накопленный шанс получить хотя бы один 5★ с 1-й крутки до этой">Любой 5★<br>к №</th>
+                <th title="Накопленный шанс получить нужную баннерную цель с учётом гарантов">Нужный 5★<br>к №</th>
               </tr>
             </thead>
             <tbody></tbody>
