@@ -340,6 +340,12 @@ function renderHeatmap(type, { animate = true } = {}) {
   const data = firstFiveStarDistribution(type);
   const freshTargetSeries = targetChanceSeries(type, cfg.hardPity, freshTargetOptions(type));
 
+  if (currentPity > 0 && STATE.selectedPity[type] <= currentPity) {
+    STATE.selectedPity[type] = Math.min(cfg.hardPity, currentPity + 1);
+  } else {
+    STATE.selectedPity[type] = clamp(STATE.selectedPity[type], 1, cfg.hardPity);
+  }
+
   titleEl.textContent = `${cfg.label} — тепловая карта (Heat Map)`;
   descEl.textContent = currentPity > 0
     ? 'Белая рамка показывает твой текущий счётчик. Прошлые крутки приглушены, будущие проценты считаются от твоего pity.'
