@@ -9,6 +9,11 @@ import {
 
 const STATE = {
   active: 'characters',
+  mode: 'simple',
+  selectedPity: {
+    characters: BANNERS.characters.softPityStart,
+    weapons: BANNERS.weapons.softPityStart,
+  },
   planner: {
     characters: { pity: 0, pulls: 90, guaranteed: false },
     weapons: { pity: 0, pulls: 80, fatePoint: 0, featuredGuaranteed: false },
@@ -20,6 +25,9 @@ const gridEl = el('gridView');
 const titleEl = el('bannerTitle');
 const descEl = el('bannerDesc');
 const rangeEl = el('countRange');
+const heatZonesEl = el('heatZones');
+const heatPersonalHintEl = el('heatPersonalHint');
+const mobilePityCardEl = el('mobilePityCard');
 const sideBody = document.querySelector('#sideTable tbody');
 const tooltip = el('tooltip');
 const statsEl = el('bannerStats');
@@ -35,6 +43,8 @@ const plannerAnyEl = el('plannerAny');
 const plannerTargetEl = el('plannerTarget');
 const plannerWorstEl = el('plannerWorst');
 const plannerPrimogemsEl = el('plannerPrimogems');
+const modeSimpleEl = el('mode-simple');
+const modeDetailedEl = el('mode-detailed');
 
 const COLOR_STOPS = [
   { pct: 0, color: '#16a34a' },
@@ -84,6 +94,14 @@ function fmtPct(probability, digits = 2) {
   return `${percent.toFixed(digits).replace('.', ',')}%`;
 }
 
+function fmtPctCompact(probability) {
+  const percent = probability * 100;
+  if (percent >= 99.5) return '100%';
+  if (percent < 1) return `${percent.toFixed(1).replace('.', ',')}%`;
+  if (percent < 10) return `${percent.toFixed(1).replace('.', ',')}%`;
+  return `${Math.round(percent)}%`;
+}
+
 function fmtNumber(value, digits = 2) {
   return Number(value).toFixed(digits).replace('.', ',');
 }
@@ -115,6 +133,69 @@ function worstCaseTargetPulls(type, options) {
   return (Number(options.fatePoint) >= 1 ? cfg.hardPity : cfg.targetHardGuaranteePulls) - pityCredit;
 }
 
+function zoneName(cfg, pity) {
+  if (pity >= cfg.hardPity) return 'hard';
+  if (pity >= cfg.softPityStart) return 'soft';
+  return 'normal';
+}
+
+function zoneTitle(cfg, pity) {
+  const zone = zoneName(cfg, pity);
+  if (zone === 'hard') return 'Жёсткий гарант';
+  if (zone === 'soft') return 'Софт-гарант';
+  return 'Обычный шанс';
+}
+
+function metricsForRow(type, row, freshTargetSeries) {
+  const currentPity = STATE.planner[type].pity;
+  if (currentPity <= 0) {
+    return {
+      personal: false,
+      passed: false,
+      current: false,
+      future: true,
+      delta: row.pity,
+      anyChance: row.cumulative,
+      targetChance: freshTargetSeries[row.pity - 1] ?? 0,
+    };
+  }
+
+  if (row.pity < currentPity) {
+    return {
+      personal: true,
+      passed: true,
+      current: false,
+      future: false,
+      delta: 0,
+      anyChance: 0,
+      targetChance: 0,
+    };
+  }
+
+  if (row.pity === currentPity) {
+    return {
+      personal: true,
+      passed: false,
+      current: true,
+      future: false,
+      delta: 0,
+      anyChance: 0,
+      targetChance: 0,
+    };
+  }
+
+  const delta = row.pity - currentPity;
+  return {
+    personal: true,
+    passed: false,
+    current: false,
+    future: true,
+    delta,
+    anyChance: anyFiveStarChanceWithin(type, delta, { startingPity: currentPity }),
+    targetChance: targetChanceWithin(type, delta, plannerOptions(type)),
+  };
+}
+
 function assignStaggerIndicesRowMajor() {
   const positions = Array.from(gridEl.children).map((cell) => ({
     cell,
@@ -144,18 +225,29 @@ function renderStats(type) {
   `;
 }
 
-function renderHeatmap(type) {
+function renderZoneLegend(type) {
   const cfg = BANNERS[type];
-  const data = firstFiveStarDistribution(type);
-  const targetSeries = targetChanceSeries(type, cfg.hardPity, freshTargetOptions(type));
+  const normalEnd = cfg.softPityStart - 1;
+  const softEnd = cfg.hardPity - 1;
+  heatZonesEl.innerHTML = `
+    <span class="zone-chip normal">1–${normalEnd}: обычный шанс</span>
+    <span class="zone-chip soft">${cfg.softPityStart}–${softEnd}: софт-гарант</span>
+    <span class="zone-chip hard">${cfg.hardPity}: жёсткий гарант</span>
+  `;
+}
 
-  titleEl.textContent = `${cfg.label} — тепловая карта (Heat Map)`;
-  descEl.textContent = 'Цвет показывает, насколько близко к жёсткому гаранту эта крутка. Наведи на номер, чтобы увидеть точные шансы.';
-  rangeEl.textContent = `1 — ${cfg.hardPity}`;
+function renderTableExample(type, data, freshTargetSeries) {
+  const cfg = BANNERS[type];
+  const currentPity = STATE.planner[type].pity;
 
-  gridEl.classList.remove('visible');
-  clearChildren(gridEl);
-  clearChildren(sideBody);
+  if (currentPity > 0) {
+    tableExampleEl.innerHTML = `
+      <b>Сейчас у тебя ${currentPity} круток без 5★.</b>
+      Пройденные строки приглушены, а значения «до №» для будущих круток считаются
+      <b>от твоего текущего счётчика</b>, а не с нуля.
+    `;
+    return;
+  }
 
   const exampleIndex = cfg.softPityStart - 1;
   const exampleRow = data[exampleIndex];
@@ -164,39 +256,176 @@ function renderHeatmap(type) {
     <b>Пример на ${cfg.softPityStart}-й крутке:</b>
     если ты дошёл до неё без 5★, шанс выбить 5★ <b>именно сейчас — ${fmtPct(exampleRow.hazard)}</b>.
     Но шанс, что <b>любой 5★ уже выпадет к этому моменту — ${fmtPct(exampleRow.cumulative)}</b>.
-    А шанс уже получить <b>${targetName} — ${fmtPct(targetSeries[exampleIndex])}</b>.
-    Поэтому эти три процента и отличаются.
+    А шанс уже получить <b>${targetName} — ${fmtPct(freshTargetSeries[exampleIndex])}</b>.
+    Поэтому эти три процента отличаются.
   `;
+}
 
-  data.forEach((row, index) => {
+function renderMobilePityCard(type, data, freshTargetSeries) {
+  const cfg = BANNERS[type];
+  const currentPity = STATE.planner[type].pity;
+  let selected = clamp(
+    Number(STATE.selectedPity[type]) || cfg.softPityStart,
+    1,
+    cfg.hardPity,
+  );
+
+  if (currentPity > 0 && selected <= currentPity) {
+    selected = Math.min(cfg.hardPity, currentPity + 1);
+    STATE.selectedPity[type] = selected;
+  }
+
+  const row = data[selected - 1];
+  const metrics = metricsForRow(type, row, freshTargetSeries);
+  const anyText = metrics.current ? '—' : fmtPct(metrics.anyChance);
+  const targetText = metrics.current ? '—' : fmtPct(metrics.targetChance);
+  const contextText = metrics.personal
+    ? `от твоего текущего pity ${currentPity}`
+    : 'с начала нового pity-цикла';
+
+  mobilePityCardEl.innerHTML = `
+    <div class="mobile-title">Крутка №${selected} · ${zoneTitle(cfg, selected)}</div>
+    <div class="mobile-pity-grid">
+      <div class="mobile-pity-stat"><span>5★ именно сейчас</span><strong>${fmtPct(row.hazard)}</strong></div>
+      <div class="mobile-pity-stat"><span>Любой 5★ до №</span><strong>${anyText}</strong></div>
+      <div class="mobile-pity-stat"><span>Нужная цель до №</span><strong>${targetText}</strong></div>
+      <div class="mobile-pity-stat"><span>Расчёт</span><strong>${contextText}</strong></div>
+    </div>
+    <div class="small" style="margin-top:8px;">Тапни другую клетку Heat Map, чтобы посмотреть её.</div>
+  `;
+}
+
+function selectPity(type, pity, data, freshTargetSeries) {
+  STATE.selectedPity[type] = pity;
+  document.querySelectorAll('#gridView .cell.selected-pity').forEach((node) => {
+    node.classList.remove('selected-pity');
+  });
+  document.querySelector(`#gridView .cell[data-rolls="${pity}"]`)?.classList.add('selected-pity');
+  renderMobilePityCard(type, data, freshTargetSeries);
+}
+
+function tooltipHtml(type, row, metrics) {
+  const currentPity = STATE.planner[type].pity;
+
+  if (metrics.personal && metrics.passed) {
+    return `
+      <div>Крутка: <strong>${row.pity}</strong></div>
+      <div><strong>Уже пройдена</strong> при твоём текущем pity ${currentPity}.</div>
+      <div>Шанс 5★ на этой крутке: <strong>${fmtPct(row.hazard)}</strong></div>
+    `;
+  }
+
+  if (metrics.personal && metrics.current) {
+    return `
+      <div>Твой текущий счётчик: <strong>${row.pity}</strong></div>
+      <div>Следующая крутка будет <strong>№${Math.min(BANNERS[type].hardPity, row.pity + 1)}</strong>.</div>
+    `;
+  }
+
+  const scope = metrics.personal
+    ? `за следующие ${metrics.delta} крут.`
+    : `с 1-й до ${row.pity}-й`;
+
+  return `
+    <div>Крутка: <strong>${row.pity}</strong> · ${zoneTitle(BANNERS[type], row.pity)}</div>
+    <div>5★ именно на этой: <strong>${fmtPct(row.hazard)}</strong></div>
+    <div>Любой 5★ ${scope}: <strong>${fmtPct(metrics.anyChance)}</strong></div>
+    <div>Нужная цель ${scope}: <strong>${fmtPct(metrics.targetChance)}</strong></div>
+  `;
+}
+
+function renderHeatmap(type, { animate = true } = {}) {
+  const cfg = BANNERS[type];
+  const currentPity = STATE.planner[type].pity;
+  const data = firstFiveStarDistribution(type);
+  const freshTargetSeries = targetChanceSeries(type, cfg.hardPity, freshTargetOptions(type));
+
+  if (currentPity > 0 && STATE.selectedPity[type] <= currentPity) {
+    STATE.selectedPity[type] = Math.min(cfg.hardPity, currentPity + 1);
+  } else {
+    STATE.selectedPity[type] = clamp(STATE.selectedPity[type], 1, cfg.hardPity);
+  }
+
+  titleEl.textContent = `${cfg.label} — тепловая карта (Heat Map)`;
+  descEl.textContent = currentPity > 0
+    ? 'Белая рамка показывает твой текущий счётчик. Прошлые крутки приглушены, будущие проценты считаются от твоего pity.'
+    : 'Зоны показывают обычный шанс, софт-гарант и жёсткий гарант. Введи свой pity в калькуляторе — карта станет персональной.';
+  rangeEl.textContent = `1 — ${cfg.hardPity}`;
+  renderZoneLegend(type);
+
+  heatPersonalHintEl.textContent = currentPity > 0
+    ? `Твой pity: ${currentPity}. Маленький процент в будущей клетке = шанс получить любой 5★ от текущего pity до этой крутки.`
+    : 'Сейчас показан новый pity-цикл с нуля.';
+
+  if (animate) gridEl.classList.remove('visible');
+  clearChildren(gridEl);
+  clearChildren(sideBody);
+
+  renderTableExample(type, data, freshTargetSeries);
+
+  data.forEach((row) => {
+    const zone = zoneName(cfg, row.pity);
+    const metrics = metricsForRow(type, row, freshTargetSeries);
+
     const cell = document.createElement('div');
-    cell.className = 'cell';
+    cell.className = `cell zone-${zone}`;
+    if (metrics.passed) cell.classList.add('past-pity');
+    if (metrics.current) cell.classList.add('current-pity');
+    if (metrics.future && currentPity > 0) cell.classList.add('future-pity');
+    if (STATE.selectedPity[type] === row.pity) cell.classList.add('selected-pity');
+
     cell.dataset.rolls = String(row.pity);
     cell.style.background = getColorForPercent((row.pity / cfg.hardPity) * 100);
-    cell.textContent = row.pity;
+    cell.innerHTML = `
+      <span class="cell-number">${row.pity}</span>
+      ${currentPity > 0 && metrics.future ? `<span class="cell-chance">${fmtPctCompact(metrics.anyChance)}</span>` : ''}
+    `;
     cell.setAttribute('role', 'gridcell');
     cell.setAttribute('tabindex', '0');
     cell.setAttribute(
       'aria-label',
-      `${row.pity}-я крутка: шанс получить 5★ сейчас ${fmtPct(row.hazard)}, шанс получить 5★ к этому моменту ${fmtPct(row.cumulative)}`,
+      metrics.future
+        ? `${row.pity}-я крутка: шанс 5★ сейчас ${fmtPct(row.hazard)}, накопленный шанс от твоего pity ${fmtPct(metrics.anyChance)}`
+        : `${row.pity}-я крутка: ${metrics.current ? 'текущий счётчик' : zoneTitle(cfg, row.pity)}`,
     );
-    cell.addEventListener('pointerenter', (event) => showTooltip(event, row, targetSeries[index]));
+
+    const show = (event) => {
+      tooltip.innerHTML = tooltipHtml(type, row, metrics);
+      tooltip.style.display = 'block';
+      if (event) moveTooltip(event);
+    };
+
+    cell.addEventListener('pointerenter', show);
     cell.addEventListener('pointermove', moveTooltip);
     cell.addEventListener('pointerleave', hideTooltip);
-    cell.addEventListener('focus', () => showTooltipForElement(cell, row, targetSeries[index]));
+    cell.addEventListener('focus', () => showTooltipForElement(cell, type, row, metrics));
     cell.addEventListener('blur', hideTooltip);
+    cell.addEventListener('click', () => selectPity(type, row.pity, data, freshTargetSeries));
+    cell.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      selectPity(type, row.pity, data, freshTargetSeries);
+    });
     gridEl.appendChild(cell);
 
     const tr = document.createElement('tr');
     tr.dataset.rolls = String(row.pity);
+    if (metrics.passed) tr.classList.add('past-row');
+    if (metrics.current) tr.classList.add('current-row');
+
+    const cumulativeText = metrics.current || metrics.passed ? '—' : fmtPct(metrics.anyChance);
+    const targetText = metrics.current || metrics.passed ? '—' : fmtPct(metrics.targetChance);
     tr.innerHTML = `
       <td>${row.pity}</td>
       <td>${fmtPct(row.hazard)}</td>
-      <td>${fmtPct(row.cumulative)}</td>
-      <td>${fmtPct(targetSeries[index])}</td>
+      <td>${cumulativeText}</td>
+      <td>${targetText}</td>
     `;
+    tr.addEventListener('click', () => selectPity(type, row.pity, data, freshTargetSeries));
     sideBody.appendChild(tr);
   });
+
+  renderMobilePityCard(type, data, freshTargetSeries);
 
   requestAnimationFrame(() => {
     assignStaggerIndicesRowMajor();
@@ -223,13 +452,14 @@ function renderPlanner(type) {
     weaponGuaranteeEl.checked = p.featuredGuaranteed;
   }
 
-  updatePlannerResults();
+  updatePlannerResults({ refreshHeatmap: false });
 }
 
-function updatePlannerResults() {
+function updatePlannerResults({ refreshHeatmap = true } = {}) {
   const type = STATE.active;
   const cfg = BANNERS[type];
   const p = STATE.planner[type];
+  const oldPity = p.pity;
 
   p.pity = clamp(Math.floor(Number(currentPityEl.value) || 0), 0, cfg.hardPity - 1);
   p.pulls = clamp(Math.floor(Number(futurePullsEl.value) || 0), 0, cfg.targetHardGuaranteePulls);
@@ -244,17 +474,41 @@ function updatePlannerResults() {
   currentPityEl.value = String(p.pity);
   futurePullsEl.value = String(p.pulls);
 
+  if (oldPity !== p.pity) {
+    STATE.selectedPity[type] = p.pity > 0
+      ? Math.min(cfg.hardPity, p.pity + 1)
+      : cfg.softPityStart;
+  }
+
   const options = plannerOptions(type);
   const anyChance = anyFiveStarChanceWithin(type, p.pulls, options);
   const targetChance = targetChanceWithin(type, p.pulls, options);
   const worst = worstCaseTargetPulls(type, options);
+  const primogems = p.pulls * 160;
 
   plannerAnyEl.textContent = fmtPct(anyChance);
   plannerTargetEl.textContent = fmtPct(targetChance);
   plannerWorstEl.textContent = `${worst} крут.`;
-  plannerPrimogemsEl.textContent = `${(p.pulls * 160).toLocaleString('ru-RU')}`;
+  plannerPrimogemsEl.textContent = `${primogems.toLocaleString('ru-RU')} Камней • ${p.pulls.toLocaleString('ru-RU')} молитв`;
 
   persistState();
+  if (refreshHeatmap) renderHeatmap(type, { animate: false });
+}
+
+function applyMode() {
+  const simple = STATE.mode === 'simple';
+  document.body.classList.toggle('simple-mode', simple);
+  modeSimpleEl.classList.toggle('active', simple);
+  modeDetailedEl.classList.toggle('active', !simple);
+  modeSimpleEl.setAttribute('aria-pressed', String(simple));
+  modeDetailedEl.setAttribute('aria-pressed', String(!simple));
+}
+
+function setMode(mode) {
+  if (mode !== 'simple' && mode !== 'detailed') return;
+  STATE.mode = mode;
+  applyMode();
+  try { localStorage.setItem('gachaViewMode', mode); } catch { /* optional */ }
 }
 
 function render() {
@@ -265,9 +519,11 @@ function render() {
     button.setAttribute('aria-selected', String(active));
   });
 
-  renderHeatmap(type);
   renderStats(type);
   renderPlanner(type);
+  renderHeatmap(type);
+  applyMode();
+
   try { localStorage.setItem('lastBanner', type); } catch { /* storage optional */ }
 }
 
@@ -278,25 +534,9 @@ function switchTab(type) {
   render();
 }
 
-function tooltipHtml(row, targetChance) {
-  return `
-    <div>Крутка: <strong>${row.pity}</strong></div>
-    <div>Шанс 5★ именно сейчас: <strong>${fmtPct(row.hazard)}</strong></div>
-    <div>Шанс первого 5★ именно здесь: <strong>${fmtPct(row.exact, 3)}</strong></div>
-    <div>Шанс получить 5★ к этому моменту: <strong>${fmtPct(row.cumulative)}</strong></div>
-    <div>Шанс уже получить нужную цель: <strong>${fmtPct(targetChance)}</strong></div>
-  `;
-}
-
-function showTooltip(event, row, targetChance) {
-  tooltip.innerHTML = tooltipHtml(row, targetChance);
-  tooltip.style.display = 'block';
-  moveTooltip(event);
-}
-
-function showTooltipForElement(element, row, targetChance) {
+function showTooltipForElement(element, type, row, metrics) {
   const rect = element.getBoundingClientRect();
-  tooltip.innerHTML = tooltipHtml(row, targetChance);
+  tooltip.innerHTML = tooltipHtml(type, row, metrics);
   tooltip.style.display = 'block';
   tooltip.style.left = `${rect.left + rect.width / 2}px`;
   tooltip.style.top = `${rect.top}px`;
@@ -332,7 +572,10 @@ function wireHoverSync() {
 }
 
 function persistState() {
-  try { localStorage.setItem('gachaPlannerV2', JSON.stringify(STATE.planner)); } catch { /* optional */ }
+  try {
+    localStorage.setItem('gachaPlannerV2', JSON.stringify(STATE.planner));
+    localStorage.setItem('gachaSelectedPityV3', JSON.stringify(STATE.selectedPity));
+  } catch { /* optional */ }
 }
 
 function restoreState() {
@@ -340,9 +583,16 @@ function restoreState() {
     const savedBanner = localStorage.getItem('lastBanner');
     if (savedBanner && BANNERS[savedBanner]) STATE.active = savedBanner;
 
+    const savedMode = localStorage.getItem('gachaViewMode');
+    if (savedMode === 'simple' || savedMode === 'detailed') STATE.mode = savedMode;
+
     const savedPlanner = JSON.parse(localStorage.getItem('gachaPlannerV2') || 'null');
     if (savedPlanner?.characters) Object.assign(STATE.planner.characters, savedPlanner.characters);
     if (savedPlanner?.weapons) Object.assign(STATE.planner.weapons, savedPlanner.weapons);
+
+    const selected = JSON.parse(localStorage.getItem('gachaSelectedPityV3') || 'null');
+    if (selected?.characters) STATE.selectedPity.characters = Number(selected.characters);
+    if (selected?.weapons) STATE.selectedPity.weapons = Number(selected.weapons);
   } catch { /* invalid storage is ignored */ }
 }
 
@@ -352,11 +602,13 @@ function init() {
 
   el('tab-characters').addEventListener('click', () => switchTab('characters'));
   el('tab-weapons').addEventListener('click', () => switchTab('weapons'));
+  modeSimpleEl.addEventListener('click', () => setMode('simple'));
+  modeDetailedEl.addEventListener('click', () => setMode('detailed'));
 
   [currentPityEl, futurePullsEl, characterGuaranteeEl, weaponFatePointEl, weaponGuaranteeEl]
     .forEach((control) => {
-      control.addEventListener('input', updatePlannerResults);
-      control.addEventListener('change', updatePlannerResults);
+      control.addEventListener('input', () => updatePlannerResults());
+      control.addEventListener('change', () => updatePlannerResults());
     });
 
   document.addEventListener('keydown', (event) => {
