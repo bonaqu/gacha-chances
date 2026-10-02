@@ -122,6 +122,8 @@ export function featuredCharacterChanceSeries(
   const initialPity = Math.max(0, Math.min(cfg.hardPity - 1, Math.floor(Number(startingPity) || 0)));
   const winRate = clamp01(nonGuaranteedWinRate);
 
+  // Only unsuccessful probability mass remains in states.
+  // key = `${pity}|${guaranteed ? 1 : 0}`
   let success = 0;
   let states = new Map([[`${initialPity}|${guaranteed ? 1 : 0}`, 1]]);
   const series = [];
@@ -180,6 +182,7 @@ export function featuredWeaponChanceSeries(
   const initialFeaturedGuarantee = Boolean(featuredGuaranteed);
 
   let success = 0;
+  // key = pity|fatePoint|featuredGuarantee
   let states = new Map([
     [`${initialPity}|${initialFatePoint}|${initialFeaturedGuarantee ? 1 : 0}`, 1],
   ]);
@@ -211,6 +214,7 @@ export function featuredWeaponChanceSeries(
 
       const nonTargetMass = fiveMass * (1 - targetRate);
       if (nonTargetMass > 0) {
+        // Any non-target 5★ gives the one Fate Point required since v5.0.
         addMass(next, '0|1|1', nonTargetMass);
       }
     }
