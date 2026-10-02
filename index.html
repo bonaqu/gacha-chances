@@ -40,12 +40,15 @@
     .grid-heat.visible .cell{opacity:1;transform:none;}
     .cell:hover,.cell.highlighted{transform:translateY(-4px) scale(1.03);box-shadow:0 0 0 4px rgba(125,211,252,.12),0 10px 30px rgba(0,0,0,.55);z-index:3;}
     #sideTable tbody tr.row-highlighted{background:rgba(125,211,252,.06);}
-    .table-wrap{max-height:420px;overflow:auto;margin-top:10px;border-radius:9px;border:1px solid rgba(255,255,255,.05);}
-    .table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;min-width:370px;}
-    .table th,.table td{padding:8px 6px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);}
+    .table-wrap{max-height:420px;overflow:auto;margin-top:10px;border-radius:9px;border:1px solid rgba(255,255,255,.05);scrollbar-gutter:stable;}
+    .table{width:520px;min-width:520px;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+    .table th,.table td{padding:9px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle;}
     .table td{white-space:nowrap;}
-    .table th{position:sticky;top:0;z-index:2;color:#fff;font-weight:700;background:#0c1524;line-height:1.25;white-space:normal;}
-    .table th:first-child,.table td:first-child{width:42px;}
+    .table thead th{position:static!important;top:auto!important;z-index:auto!important;color:#fff;font-weight:700;background:#0c1524;line-height:1.3;white-space:normal;}
+    .table th:first-child,.table td:first-child{width:46px;}
+    .table th:nth-child(2),.table td:nth-child(2){width:112px;}
+    .table th:nth-child(3),.table td:nth-child(3){width:170px;}
+    .table th:nth-child(4),.table td:nth-child(4){width:192px;}
     .table th:nth-child(2){background:rgba(125,211,252,.12);}
     .table th:nth-child(3),.table th:nth-child(4){background:rgba(250,204,21,.08);}
     .table tbody tr:hover{background:rgba(255,255,255,.03);}
@@ -134,18 +137,17 @@
     <div class="paimon-note">
       <img
         class="paimon-art"
-        src="https://raw.githubusercontent.com/MadeBaruna/paimon-moe/0a88d5391005a4331a1413966528dd1762ce2614/static/paimon-og.png"
+        src="./assets/paimon.svg"
         alt="Паймон"
         width="72"
         height="72"
         loading="lazy"
         decoding="async"
-        onerror="this.onerror=null;this.src='https://paimon.moe/paimon-og.png'"
       />
       <div class="paimon-copy">
         <strong>Паймон подсказывает ✨</strong>
         <p>Если хочется одного ответа без математики — смотри на <b>«Нужная цель»</b>. Это вероятность уже получить именно того персонажа или то оружие, ради которого ты крутишь баннер.</p>
-        <div class="asset-credit">Изображение: <a href="https://github.com/MadeBaruna/paimon-moe" target="_blank" rel="noopener noreferrer">Paimon.moe</a> • Genshin Impact © HoYoverse</div>
+        <div class="asset-credit">Арт: <a href="https://github.com/Genshin-Flow/GenshinFlow_Fe" target="_blank" rel="noopener noreferrer">GenshinFlow</a> • Genshin Impact © HoYoverse</div>
       </div>
     </div>
   </section>
@@ -256,8 +258,8 @@
               <tr>
                 <th title="Номер крутки после последнего 5★">№</th>
                 <th title="Шанс 5★ именно на этой крутке, если ты до неё дошёл без 5★">5★ сейчас</th>
-                <th title="Накопленный шанс получить хотя бы один 5★ с 1-й крутки до этой">Любой 5★<br>к №</th>
-                <th title="Накопленный шанс получить нужную баннерную цель с учётом гарантов">Нужный 5★<br>к №</th>
+                <th title="Накопленный шанс получить хотя бы один 5★ с 1-й крутки до этой">Любой 5★<br>до №</th>
+                <th title="Накопленный шанс получить нужную баннерную цель с учётом гарантов">Нужный 5★<br>до №</th>
               </tr>
             </thead>
             <tbody></tbody>
