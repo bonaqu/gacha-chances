@@ -41,13 +41,14 @@
     .side{display:flex;flex-direction:column;gap:12px;}
     .grid-heat{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(44px,1fr));align-items:center;opacity:0;transform:translateY(10px);transition:opacity .18s ease,transform .18s ease;}
     .grid-heat.visible{opacity:1;transform:none;}
-    .cell{aspect-ratio:1/1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:rgba(0,0,0,.85);cursor:pointer;box-shadow:inset 0 2px 8px rgba(2,6,12,.45);opacity:0;transform:translateY(10px) scale(.98);transition:opacity var(--cell-duration) cubic-bezier(.4,0,.6,1) calc(var(--i,0) * var(--cell-delay-ms)),transform var(--cell-duration) cubic-bezier(.4,0,.6,1) calc(var(--i,0) * var(--cell-delay-ms));}
+    .cell{aspect-ratio:1/1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:rgba(0,0,0,.85);cursor:pointer;box-shadow:inset 0 2px 8px rgba(2,6,12,.45);opacity:0;transform:translateY(10px) scale(.98);transition:opacity var(--cell-duration) cubic-bezier(.4,0,.6,1) calc(var(--i,0) * var(--cell-delay-ms)),transform var(--cell-duration) cubic-bezier(.4,0,.6,1) calc(var(--i,0) * var(--cell-delay-ms));}
     .grid-heat.visible .cell{opacity:1;transform:none;}
     .cell:hover,.cell.highlighted{transform:translateY(-4px) scale(1.03);box-shadow:0 0 0 4px rgba(125,211,252,.12),0 10px 30px rgba(0,0,0,.55);z-index:3;}
     .cell.zone-soft{outline:2px solid rgba(250,204,21,.38);outline-offset:-2px;}
     .cell.zone-hard{outline:3px solid rgba(239,68,68,.86);outline-offset:-3px;font-weight:900;}
     .cell.past-pity{opacity:.32!important;filter:saturate(.55);}
     .cell.current-pity{opacity:1!important;filter:none;box-shadow:0 0 0 3px #fff,0 0 0 6px rgba(125,211,252,.68),0 8px 24px rgba(0,0,0,.55);z-index:4;}
+    .cell.selected-pity:not(.current-pity){box-shadow:0 0 0 3px rgba(255,255,255,.74),0 8px 22px rgba(0,0,0,.45);z-index:3;}
     .cell.future-pity{opacity:1!important;}
     .cell-number{line-height:1;font-size:12px;}
     .cell-chance{display:block;margin-top:3px;font-size:8px;line-height:1;color:rgba(0,0,0,.72);font-weight:800;}
