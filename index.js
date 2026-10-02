@@ -138,7 +138,7 @@ function renderStats(type) {
     <div class="stat"><span>Среднее до 5★ по модели</span><strong>${fmtNumber(stats.expectedPity, 2)} крут.</strong></div>
     <div class="stat"><span>Средний шанс по модели</span><strong>${fmtPct(stats.modelConsolidatedRate, 3)}</strong></div>
     <div class="stat"><span>Официальный средний шанс</span><strong>${fmtPct(cfg.officialConsolidatedRate, 2)}</strong></div>
-    <div class="stat"><span>50% / 95% игроков</span><strong>до ${stats.medianPity} / ${stats.p95Pity}</strong></div>
+    <div class="stat"><span>Шанс 50% / 95%</span><strong>к ${stats.medianPity}-й / ${stats.p95Pity}-й</strong></div>
     <div class="stat"><span>Примечание</span><strong title="Точная формула софт-гаранта не опубликована HoYoverse">${empiricalNote}</strong></div>
   `;
 }
@@ -240,7 +240,7 @@ function updatePlannerResults() {
   plannerAnyEl.textContent = fmtPct(anyChance);
   plannerTargetEl.textContent = fmtPct(targetChance);
   plannerWorstEl.textContent = `${worst} крут.`;
-  plannerPrimogemsEl.textContent = `${(p.pulls * 160).toLocaleString('ru-RU')} примо`;
+  plannerPrimogemsEl.textContent = `${(p.pulls * 160).toLocaleString('ru-RU')}`;
 
   persistState();
 }
